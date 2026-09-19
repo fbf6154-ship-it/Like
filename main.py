@@ -1,75 +1,86 @@
 import os
+import time
+import random
 import telebot
 from telebot.types import ReactionTypeEmoji
 from flask import Flask
 from threading import Thread
 
-# --- Render এবং UptimeRobot এর জন্য ওয়েব সার্ভার ---
+# --- Render ও UptimeRobot-এর জন্য ওয়েব সার্ভার ---
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "All 7 Reaction Bots are running 24/7!"
+    return "Randomized Multi-React Bot is running 24/7!"
 
 def run_web():
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
-    t = Thread(target=run_web)
-    t.start()
+    Thread(target=run_web).start()
 
-# --- আপনার ৬-৭টি বটের টোকেন লিস্ট ---
-# এগুলো আপনি সরাসরি Render এর Environment Variables-এও দিতে পারেন 
-# অথবা নিচের কোটেশনের ভেতরেও সরাসরি টোকেন বসিয়ে দিতে পারেন:
+# --- আপনার বটের টোকেন লিস্ট ---
 BOT_TOKENS = [
-    os.environ.get('BOT_TOKEN_1', 'আপনার_১ম_বট_টোকেন'),
-    os.environ.get('BOT_TOKEN_2', 'আপনার_২য়_বট_টোকেন'),
-    os.environ.get('BOT_TOKEN_3', 'আপনার_৩য়_বট_টোকেন'),
-    os.environ.get('BOT_TOKEN_4', 'আপনার_৪র্থ_বট_টোকেন'),
-    os.environ.get('BOT_TOKEN_5', 'আপনার_৫ম_বট_টোকেন'),
-    os.environ.get('BOT_TOKEN_6', 'আপনার_৬ষ্ঠ_বট_টোকেন'),
-    os.environ.get('BOT_TOKEN_7', 'আপনার_৭ম_বট_টোকেন'),
+    os.environ.get('BOT_TOKEN_1', 'আপনার_১ম_টোকেন'),
+    os.environ.get('BOT_TOKEN_2', 'আপনার_২য়_টোকেন'),
+    os.environ.get('BOT_TOKEN_3', 'আপনার_৩য়_টোকেন'),
+    os.environ.get('BOT_TOKEN_4', 'আপনার_৪র্থ_টোকেন'),
+    os.environ.get('BOT_TOKEN_5', 'আপনার_৫ম_টোকেন'),
+    os.environ.get('BOT_TOKEN_6', 'আপনার_৬ষ্ঠ_টোকেন'),
+    os.environ.get('BOT_TOKEN_7', 'আপনার_৭ম_টোকেন'),
 ]
 
-# বটগুলো যে যে রিঅ্যাক্টগুলো দেবে (৭টি আলাদা ইমোজি)
-REACTION_EMOJIS = ["👍", "❤️", "🔥", "🎉", "👏", "😍", "🤩"]
+# যে যে ইমোজিগুলো দিয়ে রিঅ্যাক্ট করাতে চান
+EMOJI_POOL = ["👍", "❤️", "🔥", "🎉", "👏", "😍", "🤩", "⭐", "🥰"]
 
-# সক্রিয় বটগুলোর অবজেক্ট তৈরি
+# সক্রিয় বটগুলোর তালিকা তৈরি
 active_bots = []
 for token in BOT_TOKENS:
     if token and "আপনার_" not in token:
         try:
             active_bots.append(telebot.TeleBot(token))
         except Exception as e:
-            print(f"Token Error: {e}")
+            print(f"Error loading bot: {e}")
 
 if not active_bots:
-    print("কোনো ভ্যালিড বট টোকেন পাওয়া যায়নি!")
+    print("কোনো ভ্যালিড টোকেন পাওয়া যায়নি!")
     exit(1)
 
-# প্রথম বট পোস্ট শুনবে (Listener)
 main_listener = active_bots[0]
 
-@main_listener.channel_post_handler(func=lambda message: True)
-def auto_react_to_post(message):
-    print(f"New post detected in channel: {message.chat.title} (ID: {message.chat.id})")
+def react_worker(chat_id, message_id):
+    # কতগুলো বট এই পোস্টে রিঅ্যাক্ট দেবে তা র‍্যান্ডমলি ঠিক করা (৩ থেকে মোট বট সংখ্যা পর্যন্ত)
+    min_bots = min(2, len(active_bots))
+    num_bots_to_react = random.randint(min_bots, len(active_bots))
     
-    # সব কয়টি বট একযোগে আলাদা আলাদা রিঅ্যাক্ট দেবে
-    for index, current_bot in enumerate(active_bots):
+    # র‍্যান্ডমলি বটগুলোকে বাছাই করা
+    selected_bots = random.sample(active_bots, num_bots_to_react)
+    
+    for b in selected_bots:
         try:
-            emoji = REACTION_EMOJIS[index % len(REACTION_EMOJIS)]
-            current_bot.set_message_reaction(
-                chat_id=message.chat.id,
-                message_id=message.message_id,
-                reaction=[ReactionTypeEmoji(emoji=emoji)],
+            # মানুষের মতো ন্যাচারাল দেখানোর জন্য ১ থেকে ৩ সেকেন্ড বিরতি
+            time.sleep(random.uniform(0.8, 2.5))
+            
+            # র‍্যান্ডম একটি ইমোজি নির্বাচন (এতে একাধিক বট একই ইমোজি দিতে পারবে)
+            chosen_emoji = random.choice(EMOJI_POOL)
+            
+            b.set_message_reaction(
+                chat_id=chat_id,
+                message_id=message_id,
+                reaction=[ReactionTypeEmoji(emoji=chosen_emoji)],
                 is_big=False
             )
-            print(f"Bot {index + 1} reacted with: {emoji}")
         except Exception as e:
-            print(f"Bot {index + 1} failed: {e}")
+            print(f"Reaction error: {e}")
+
+@main_listener.channel_post_handler(func=lambda message: True)
+def auto_react_handler(message):
+    print(f"New post in channel: {message.chat.id}")
+    # মূল লুপ যাতে আটকে না যায় তাই ব্যাকগ্রাউন্ড থ্রেডে রিঅ্যাক্ট পাঠানো
+    Thread(target=react_worker, args=(message.chat.id, message.message_id)).start()
 
 if __name__ == '__main__':
     keep_alive()
-    print("Multi-React System Active...")
+    print("Realistic Natural Multi-Bot started...")
     main_listener.infinity_polling()
