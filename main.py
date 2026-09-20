@@ -6,12 +6,12 @@ from telebot.types import ReactionTypeEmoji
 from flask import Flask
 from threading import Thread
 
-# --- Render এবং UptimeRobot-এর জন্য ওয়েব সার্ভার ---
+# --- Render ও UptimeRobot-এর জন্য ওয়েব সার্ভার ---
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "All-Media 7-Bot Random Reaction System is Active 24/7!"
+    return "Ultra-Stable 7-Bot All-Media Reaction System is Live 24/7!"
 
 def run_web():
     port = int(os.environ.get('PORT', 8080))
@@ -34,7 +34,7 @@ BOT_TOKENS = [
 # আপনার দেওয়া নির্দিষ্ট ৭টি ইমোজির তালিকা
 TARGET_EMOJIS = ["❤️", "👍", "🔥", "👏", "🎉", "😍", "⚡"]
 
-# সব ধরনের মিডিয়া ফরম্যাটের লিস্ট (টেক্সট, ছবি, স্টিকার, ভিডিও ইত্যাদি)
+# সব ধরনের পোস্ট ফরম্যাট (লেখা, ছবি, ভিডিও, স্টিকার ইত্যাদি)
 ALL_MEDIA_TYPES = [
     'text', 'photo', 'video', 'document', 'audio', 'voice',
     'sticker', 'animation', 'poll', 'video_note', 'contact',
@@ -48,7 +48,7 @@ for token in BOT_TOKENS:
         try:
             active_bots.append(telebot.TeleBot(token))
         except Exception as e:
-            print(f"Token Error: {e}")
+            print(f"Token Load Error: {e}")
 
 if not active_bots:
     print("কোনো ভ্যালিড বট টোকেন পাওয়া যায়নি!")
@@ -61,12 +61,13 @@ def generate_natural_reactions():
     emojis = TARGET_EMOJIS.copy()
     random.shuffle(emojis)
 
+    # বাস্তবসম্মত কম্বিনেশন
     possible_patterns = [
         [1, 1, 1, 1, 1, 1, 1],  # ৭টিই আলাদা
-        [2, 1, 1, 1, 1, 1],     # একটিতে ২টি, বাকিগুলো ১টি করে
-        [3, 1, 1, 1, 1],        # একটিতে ৩টি, বাকিগুলো ১টি করে
-        [2, 2, 1, 1, 1],        # দুইটিতে ২টি করে, বাকিগুলো ১টি করে
-        [3, 2, 1, 1],           # একটিতে ৩টি, একটিতে ২টি, বাকিগুলো ১টি করে
+        [2, 1, 1, 1, 1, 1],     # একটিতে ২টি, বাকিগুলো ১টি
+        [3, 1, 1, 1, 1],        # একটিতে ৩টি, বাকিগুলো ১টি
+        [2, 2, 1, 1, 1],        # দুইটিতে ২টি করে, বাকিগুলো ১টি
+        [3, 2, 1, 1],           # একটিতে ৩টি, একটিতে ২টি, বাকি ২টি ১টি
         [2, 2, 2, 1]            # তিনটিতে ২টি করে, বাকি একটি ১টি
     ]
 
@@ -83,7 +84,7 @@ def execute_smart_reactions(chat_id, message_id):
     reaction_plan = generate_natural_reactions()
     print(f"Reaction Plan for post {message_id}: {reaction_plan}")
 
-    # ৭টি বট ১ সেকেন্ড পরপর রিঅ্যাক্ট প্রদান করবে
+    # ৭টি বট ক্রমান্বয়ে ঠিক ১ সেকেন্ড বিরতিতে রিঅ্যাক্ট দেবে
     for index, current_bot in enumerate(active_bots):
         try:
             emoji_to_send = reaction_plan[index]
@@ -102,14 +103,23 @@ def execute_smart_reactions(chat_id, message_id):
         except Exception as e:
             print(f"Bot {index + 1} Error: {e}")
 
-# এখানে সব ধরনের কন্টেন্ট টাইপ (All Content Types) অ্যাড করা হলো
+# সব ধরনের কন্টেন্টে রিঅ্যাক্ট ট্রিগার
 @main_listener.channel_post_handler(content_types=ALL_MEDIA_TYPES)
 def auto_react_all_media(message):
     print(f"New post detected! Type: {message.content_type} (ID: {message.message_id})")
-    # সাথে সাথে ব্যাকগ্রাউন্ড থ্রেডে রিঅ্যাক্ট শুরু হবে
     Thread(target=execute_smart_reactions, args=(message.chat.id, message.message_id)).start()
 
 if __name__ == '__main__':
     keep_alive()
-    print("All-Media Reaction Bot System is Live...")
-    main_listener.infinity_polling()
+    print("Initializing Multi-Bot System...")
+    
+    # Error 409 Conflict দূর করার জন্য আগের পেন্ডিং রিকোয়েস্ট ক্লিয়ার
+    try:
+        main_listener.remove_webhook(drop_pending_updates=True)
+    except Exception:
+        pass
+    
+    time.sleep(1.5)  # পূর্বের সেশন ক্লোজ হওয়ার জন্য সংক্ষিপ্ত বিরতি
+    
+    print("Bot is successfully running and waiting for channel posts...")
+    main_listener.infinity_polling(skip_pending=True, timeout=20)
