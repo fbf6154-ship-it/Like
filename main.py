@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Ultra-Realistic 7-Bot Random Reaction System is Live!"
+    return "All-Media 7-Bot Random Reaction System is Active 24/7!"
 
 def run_web():
     port = int(os.environ.get('PORT', 8080))
@@ -34,6 +34,13 @@ BOT_TOKENS = [
 # আপনার দেওয়া নির্দিষ্ট ৭টি ইমোজির তালিকা
 TARGET_EMOJIS = ["❤️", "👍", "🔥", "👏", "🎉", "😍", "⚡"]
 
+# সব ধরনের মিডিয়া ফরম্যাটের লিস্ট (টেক্সট, ছবি, স্টিকার, ভিডিও ইত্যাদি)
+ALL_MEDIA_TYPES = [
+    'text', 'photo', 'video', 'document', 'audio', 'voice',
+    'sticker', 'animation', 'poll', 'video_note', 'contact',
+    'location', 'venue', 'dice'
+]
+
 # সক্রিয় বটগুলোর লিস্ট তৈরি
 active_bots = []
 for token in BOT_TOKENS:
@@ -54,14 +61,13 @@ def generate_natural_reactions():
     emojis = TARGET_EMOJIS.copy()
     random.shuffle(emojis)
 
-    # ৭টি রিঅ্যাক্টের বিভিন্ন বাস্তবসম্মত কম্বিনেশন
     possible_patterns = [
-        [1, 1, 1, 1, 1, 1, 1],  # ৭টিই আলাদা আলাদা (প্রত্যেকটি ১টি করে)
-        [2, 1, 1, 1, 1, 1],     # একটি ইমোজি ২টি, বাকি ৫টি ১টি করে
-        [3, 1, 1, 1, 1],        # একটি ইমোজি ৩টি, বাকি ৪টি ১টি করে
-        [2, 2, 1, 1, 1],        # দুইটি ইমোজি ২টি করে, বাকি ৩টি ১টি করে
-        [3, 2, 1, 1],           # একটি ৩টি, একটি ২টি, বাকি ২টি ১টি করে
-        [2, 2, 2, 1]            # তিনটি ইমোজি ২টি করে, বাকি একটি ১টি
+        [1, 1, 1, 1, 1, 1, 1],  # ৭টিই আলাদা
+        [2, 1, 1, 1, 1, 1],     # একটিতে ২টি, বাকিগুলো ১টি করে
+        [3, 1, 1, 1, 1],        # একটিতে ৩টি, বাকিগুলো ১টি করে
+        [2, 2, 1, 1, 1],        # দুইটিতে ২টি করে, বাকিগুলো ১টি করে
+        [3, 2, 1, 1],           # একটিতে ৩টি, একটিতে ২টি, বাকিগুলো ১টি করে
+        [2, 2, 2, 1]            # তিনটিতে ২টি করে, বাকি একটি ১টি
     ]
 
     chosen_pattern = random.choice(possible_patterns)
@@ -70,16 +76,14 @@ def generate_natural_reactions():
     for count, emoji in zip(chosen_pattern, emojis):
         reaction_plan.extend([emoji] * count)
 
-    # ক্রমান্বয়ে যাতে এলোমেলোভাবে পড়ে তার জন্য আবার শাফল করা
     random.shuffle(reaction_plan)
     return reaction_plan
 
 def execute_smart_reactions(chat_id, message_id):
-    # প্রতি পোস্টের জন্য নতুন র‍্যান্ডম প্যাটার্ন তৈরি
     reaction_plan = generate_natural_reactions()
-    print(f"Post {message_id} Reaction Plan: {reaction_plan}")
+    print(f"Reaction Plan for post {message_id}: {reaction_plan}")
 
-    # ৭টি বট ১ সেকেন্ড বিরতিতে একটি একটি করে রিঅ্যাক্ট দেবে
+    # ৭টি বট ১ সেকেন্ড পরপর রিঅ্যাক্ট প্রদান করবে
     for index, current_bot in enumerate(active_bots):
         try:
             emoji_to_send = reaction_plan[index]
@@ -92,19 +96,20 @@ def execute_smart_reactions(chat_id, message_id):
             )
             print(f"[{index + 1}/7] Reacted: {emoji_to_send}")
             
-            # ঠিক ১ সেকেন্ড পর পরবর্তী বটের রিঅ্যাক্ট
+            # ঠিক ১ সেকেন্ড গ্যাপ
             time.sleep(1.0)
             
         except Exception as e:
             print(f"Bot {index + 1} Error: {e}")
 
-@main_listener.channel_post_handler(func=lambda message: True)
-def auto_react_trigger(message):
-    print(f"New post detected (ID: {message.message_id}). Starting smart reactions...")
-    # সাথে সাথে রিঅ্যাকশন প্রসেস ব্যাকগ্রাউন্ডে চালু হবে
+# এখানে সব ধরনের কন্টেন্ট টাইপ (All Content Types) অ্যাড করা হলো
+@main_listener.channel_post_handler(content_types=ALL_MEDIA_TYPES)
+def auto_react_all_media(message):
+    print(f"New post detected! Type: {message.content_type} (ID: {message.message_id})")
+    # সাথে সাথে ব্যাকগ্রাউন্ড থ্রেডে রিঅ্যাক্ট শুরু হবে
     Thread(target=execute_smart_reactions, args=(message.chat.id, message.message_id)).start()
 
 if __name__ == '__main__':
     keep_alive()
-    print("Ultra-Realistic Multi-Bot Started...")
+    print("All-Media Reaction Bot System is Live...")
     main_listener.infinity_polling()
