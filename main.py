@@ -20,15 +20,15 @@ def run_web():
 def keep_alive():
     Thread(target=run_web).start()
 
-# --- ৭টি বটের টোকেন লিস্ট ---
+# --- আপনার দেওয়া ৭টি বটের টোকেন সরাসরি যুক্ত করা হয়েছে ---
 BOT_TOKENS = [
-    os.environ.get('BOT_TOKEN_1', 'আপনার_১ম_টোকেন'),
-    os.environ.get('BOT_TOKEN_2', 'আপনার_২য়_টোকেন'),
-    os.environ.get('BOT_TOKEN_3', 'আপনার_৩য়_টোকেন'),
-    os.environ.get('BOT_TOKEN_4', 'আপনার_৪র্থ_টোকেন'),
-    os.environ.get('BOT_TOKEN_5', 'আপনার_৫ম_টোকেন'),
-    os.environ.get('BOT_TOKEN_6', 'আপনার_৬ষ্ঠ_টোকেন'),
-    os.environ.get('BOT_TOKEN_7', 'আপনার_৭ম_টোকেন'),
+    "8913713708:AAFOQ-G40SAELmLXcetXTSKtLs44wsO6YqY",
+    "8095265015:AAE3MXODkX2x3WMLV3hDOrPFUaQiPwDr6Xs",
+    "8710440598:AAHrTG58EKcwn-bmzBE2AujP12c04OWcIrk",
+    "8556244521:AAH5yB2xP1lwnEGBtepFYIeipMq4nmBQ9I4",
+    "8849045895:AAHuZREx1u4zRtY-1QKxHzi1bGmIK7OcbcE",
+    "8924590959:AAHMwPLAyeWAZQwLH0iwR6MqIJ3hf24k6QM",
+    "8888167810:AAFsObbkPLGWFb3YQ44cHrL6YwmhcEC0R60"
 ]
 
 # আপনার দেওয়া নির্দিষ্ট ৭টি ইমোজি
@@ -44,9 +44,9 @@ ALL_MEDIA_TYPES = [
 # সক্রিয় বটগুলোর লিস্ট তৈরি
 active_bots = []
 for token in BOT_TOKENS:
-    if token and "আপনার_" not in token:
+    if token.strip():
         try:
-            active_bots.append(telebot.TeleBot(token))
+            active_bots.append(telebot.TeleBot(token.strip()))
         except Exception as e:
             print(f"Token Load Error: {e}")
 
